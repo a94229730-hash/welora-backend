@@ -715,8 +715,19 @@ app.post('/api/ai/symptom-check', async (req: Request, res: Response) => {
     symptoms || ''
   );
 
-  const systemPrompt = `You are Welora Avatar AI clinical intelligence. Respond completely in ${targetLang}. Return pure JSON with keys: triageLevel ("EMERGENCY_RED" | "URGENT_ATTENTION" | "ROUTINE_CARE" | "HOME_CARE"), isEmergency (boolean), emergencyWarning (string or null), summary (string), possibleCauses (array of {name, probability, description}), followUpQuestions (string array), recommendedNextSteps (string array), commonMedicinesInfo (array of {genericName, intendedUse, precautions, safetyNotes}), allergyAndContraindicationNotes (string), homeCareGuidance (string array), whenToSeekImmediateCare (string array), medicalDisclaimer (string).`;
+ const systemPrompt = `[LANGUAGE = ${targetLang}]
+You MUST respond ONLY in ${targetLang}. Do NOT use English. Do NOT mix languages.
+If any string value in the JSON is in English, this is a critical failure.
 
+[ROLE]
+You are Welora Avatar AI clinical intelligence.
+
+[OUTPUT]
+Return pure JSON with keys: triageLevel ("EMERGENCY_RED" | "URGENT_ATTENTION" | "ROUTINE_CARE" | "HOME_CARE"), isEmergency (boolean), emergencyWarning (string or null), summary (string), possibleCauses (array of {name, probability, description}), followUpQuestions (string array), recommendedNextSteps (string array), commonMedicinesInfo (array of {genericName, intendedUse, precautions, safetyNotes}), allergyAndContraindicationNotes (string), homeCareGuidance (string array), whenToSeekImmediateCare (string array), medicalDisclaimer (string).
+
+ALL string values MUST be in ${targetLang}.
+
+FINAL: Respond ONLY in ${targetLang}.`;
   try {
     const { text } = await callGeminiWithResilience({
       contents: `Patient symptoms: ${symptoms}, Duration: ${duration}, Severity: ${severity}, Age: ${age}, Allergies: ${allergies}. Target language: ${targetLang}.`,
@@ -753,23 +764,68 @@ app.post('/api/ai/symptom-check', async (req: Request, res: Response) => {
   }
 });
 
-// AI Chatbot
+
+// AI Chatbot — with HARD language enforcement
 app.post('/api/ai/chat', async (req: Request, res: Response) => {
   const { messages, language } = req.body;
   const targetLang = language || 'English';
+
+  const languageEnforcement: Record<string, string> = {
+    'English': 'You MUST respond ONLY in English.',
+    'Hindi': 'आपको केवल हिंदी में उत्तर देना है। Respond ONLY in Hindi using Devanagari script.',
+    'Marathi': 'तुम्ही केवळ मराठीत उत्तर द्या. Respond ONLY in Marathi using Devanagari script.',
+    'Bengali': 'আপনি শুধুমাত্র বাংলায় উত্তর দেবেন। Respond ONLY in Bengali script.',
+    'Gujarati': 'તમે ફક્ત ગુજરાતીમાં જવાબ આપો. Respond ONLY in Gujarati script.',
+    'Kannada': 'ನೀವು ಕನ್ನಡದಲ್ಲಿ ಮಾತ್ರ ಉತ್ತರಿಸಬೇಕು. Respond ONLY in Kannada script.',
+    'Tamil': 'நீங்கள் தமிழில் மட்டுமே பதிலளிக்க வேண்டும். Respond ONLY in Tamil script.',
+    'Telugu': 'మీరు తెలుగులో మాత్రమే సమాధానం ఇవ్వాలి. Respond ONLY in Telugu script.',
+    'Malayalam': 'നിങ്ങൾ മലയാളത്തിൽ മാത്രം ഉത്തരം നൽകണം. Respond ONLY in Malayalam script.',
+    'Punjabi': 'ਤੁਸੀਂ ਸਿਰਫ਼ ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ। Respond ONLY in Punjabi Gurmukhi script.',
+    'Odia': 'ଆପଣ କେବଳ ଓଡ଼ିଆରେ ଉତ୍ତର ଦିଅନ୍ତୁ। Respond ONLY in Odia script.',
+    'Assamese': 'আপুনি কেৱল অসমীয়াত উত্তৰ দিয়ক। Respond ONLY in Assamese script.',
+    'Urdu': 'آپ کو صرف اردو میں جواب دینا ہے۔ Respond ONLY in Urdu script.',
+  };
+
+  const enforcement = languageEnforcement[targetLang] || languageEnforcement['English'];
+
+  const systemInstruction = `[LANGUAGE REQUIREMENT - HIGHEST PRIORITY]
+${enforcement}
+Do NOT respond in any other language. Do NOT translate to English.
+Violation of this rule is a critical error.
+
+[ROLE]
+You are Welora Avatar AI, a compassionate medical assistant.
+
+[CORE RULES]
+- Advise calling 108 or 112 for any life-threatening emergency.
+- Be warm, clear, and concise.
+
+FINAL REMINDER: Respond ONLY in ${targetLang}.`;
+
   try {
     const contents = (messages || []).map((m: any) => ({
       role: m.role === 'user' ? 'user' : 'model',
       parts: [{ text: m.content }],
     }));
+
+    if (contents.length > 0 && targetLang !== 'English') {
+      const lastMsg = contents[contents.length - 1];
+      if (lastMsg.role === 'user' && lastMsg.parts?.[0]?.text) {
+        lastMsg.parts[0].text = `[Respond in ${targetLang} only] ${lastMsg.parts[0].text}`;
+      }
+    }
+
     const { text } = await callGeminiWithResilience({
       contents,
-      systemInstruction: `You are Welora Avatar AI. Respond in ${targetLang}. Keep answers simple, warm, and helpful. Advise 108/112 for severe emergencies.`,
+      systemInstruction,
       temperature: 0.3,
     });
-    const isEmergency = /call 108|call 112|emergency room|immediate emergency|chest pain/i.test(text);
-    res.json({ reply: text, isEmergency });
-  } catch {
+
+    const isEmergency = /call 108|call 112|emergency room|chest pain/i.test(text);
+
+    res.json({ reply: text, isEmergency, language: targetLang });
+  } catch (err: any) {
+    console.error('Chat endpoint error:', err);
     const lastUser = messages?.[messages.length - 1]?.content || '';
     const isEmergency = /chest pain|heart attack|cannot breathe|108|112/i.test(lastUser);
     res.json({
@@ -777,23 +833,50 @@ app.post('/api/ai/chat', async (req: Request, res: Response) => {
         ? 'EMERGENCY WARNING: Your reported symptoms indicate acute medical urgency. Please dial 108 or 112 immediately.'
         : `I noted your inquiry regarding "${lastUser.slice(0, 60)}". Please stay hydrated and consult a doctor if discomfort persists.`,
       isEmergency,
+      language: targetLang,
     });
   }
 });
 
-// AI Voice Respond
+// AI Voice Respond — with HARD language enforcement
 app.post('/api/ai/voice-respond', async (req: Request, res: Response) => {
   const { spokenText, language } = req.body;
   const targetLang = language || 'English';
+
+  const voiceLanguageEnforcement: Record<string, string> = {
+    'English': 'Respond ONLY in English.',
+    'Hindi': 'केवल हिंदी में उत्तर दें। Respond ONLY in Hindi using Devanagari script.',
+    'Marathi': 'केवळ मराठीत उत्तर द्या. Respond ONLY in Marathi using Devanagari script.',
+    'Bengali': 'শুধুমাত্র বাংলায় উত্তর দিন। Respond ONLY in Bengali script.',
+    'Gujarati': 'ફક્ત ગુજરાતીમાં જવાબ આપો. Respond ONLY in Gujarati script.',
+    'Kannada': 'ಕನ್ನಡದಲ್ಲಿ ಮಾತ್ರ ಉತ್ತರಿಸಿ. Respond ONLY in Kannada script.',
+    'Tamil': 'தமிழில் மட்டுமே பதிலளிக்கவும். Respond ONLY in Tamil script.',
+    'Telugu': 'తెలుగులో మాత్రమే సమాధానం. Respond ONLY in Telugu script.',
+    'Malayalam': 'മലയാളത്തിൽ മാത്രം ഉത്തരം. Respond ONLY in Malayalam script.',
+    'Punjabi': 'ਸਿਰਫ਼ ਪੰਜਾਬੀ ਵਿੱਚ ਜਵਾਬ ਦਿਓ। Respond ONLY in Punjabi Gurmukhi script.',
+    'Odia': 'କେବଳ ଓଡ଼ିଆରେ ଉତ୍ତର ଦିଅନ୍ତୁ। Respond ONLY in Odia script.',
+    'Assamese': 'কেৱল অসমীয়াত উত্তৰ দিয়ক। Respond ONLY in Assamese script.',
+    'Urdu': 'صرف اردو میں جواب دیں۔ Respond ONLY in Urdu script.',
+  };
+
+  const enforcement = voiceLanguageEnforcement[targetLang] || voiceLanguageEnforcement['English'];
+
   try {
     const { text } = await callGeminiWithResilience({
-      contents: spokenText,
-      systemInstruction: `You are Welora Avatar AI in dedicated voice conversation mode. Respond in ${targetLang} with 2-3 spoken conversational sentences.`,
+      contents: `[Respond ONLY in ${targetLang}] User said: ${spokenText}`,
+      systemInstruction: `[CRITICAL: LANGUAGE = ${targetLang}]
+${enforcement}
+Do NOT switch to English. Entire response must be in ${targetLang}.
+Keep responses SHORT (2-3 conversational sentences). Warm and clear.
+Advise 108/112 for emergencies.
+FINAL: Respond ONLY in ${targetLang}.`,
       temperature: 0.3,
     });
+
     const voiceReply = text.replace(/[*#_`~]/g, '').trim();
-    const isEmergency = /108|112|emergency|hospital immediately|chest pain/i.test(voiceReply);
-    res.json({ voiceReply, isEmergency });
+    const isEmergency = /108|112|emergency|chest pain|hospital immediately/i.test(voiceReply);
+
+    res.json({ voiceReply, isEmergency, language: targetLang });
   } catch (err: any) {
     console.error('Error in /api/ai/voice-respond:', err);
     res.status(503).json({
@@ -803,7 +886,6 @@ app.post('/api/ai/voice-respond', async (req: Request, res: Response) => {
     });
   }
 });
-
 // OCR Prescription
 app.post('/api/ai/ocr-prescription', async (req: Request, res: Response) => {
   const { imageBase64, language = 'English' } = req.body;
