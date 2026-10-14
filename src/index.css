@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+:root {
+  --welora-deep-navy: #0B1724;
+  --welora-card-navy: #142536;
+  --welora-card-hover: #1A3044;
+  --welora-medical-teal: #20B8A8;
+  --welora-soft-cyan: #66D9E8;
+  --welora-clean-white: #F4F8FB;
+  --welora-emergency-red: #EF4444;
+  --welora-border-card: #1E354A;
+  --welora-border-subtle: rgba(32, 184, 168, 0.2);
+}
+
+@theme {
+  --color-deep-navy: #0B1724;
+  --color-card-navy: #142536;
+  --color-card-navy-hover: #1A3044;
+  --color-card-navy-active: #10202E;
+  --color-medical-teal: #20B8A8;
+  --color-medical-teal-hover: #1AA394;
+  --color-medical-teal-dark: #128276;
+  --color-soft-cyan: #66D9E8;
+  --color-clean-white: #F4F8FB;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+  --color-emergency-red: #EF4444;
+  --color-emergency-red-hover: #DC2626;
+  --color-border-card: #1E354A;
+  --color-border-subtle: rgba(32, 184, 168, 0.2);
+  --color-border-teal-accent: rgba(32, 184, 168, 0.45);
+}
+
+html, body, #root {
+  min-height: 100%;
+  background-color: var(--welora-deep-navy);
+  color: var(--welora-clean-white);
+}
+
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  overflow-x: hidden;
+}
+
+.font-arabic {
+  font-family: 'Noto Naskh Arabic', 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Accessible focus indicators */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #20B8A8;
+  outline-offset: 2px;
+}
+
+/* Subtle scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulseGentle {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.92;
+  }
+}
+
+.animate-pulse-gentle {
+  animation: pulseGentle 2s infinite ease-in-out;
+}
+
+/* RTL Helpers */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}

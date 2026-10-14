@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welora Avatar AI — Next Generation Healthcare Intelligence</title>
+    <meta name="description" content="Welora Avatar AI: Next Generation Healthcare Intelligence. “Understand Your Health. Make Informed Decisions. Care with Confidence.” Comprehensive AI healthcare companion with medical symptom checking, voice avatar assistant, prescription & lab OCR, emergency SOS, hospital locator, doctor appointments, personal health journal, and medical history." />
+    <meta property="og:title" content="Welora Avatar AI — Next Generation Healthcare Intelligence" />
+    <meta property="og:description" content="Welora Avatar AI: Next Generation Healthcare Intelligence. “Understand Your Health. Make Informed Decisions. Care with Confidence.” Comprehensive AI healthcare companion." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Naskh+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+      // Gracefully prevent Vite HMR WebSocket connection loop in preview environments
+      (function() {
+        var OrigWebSocket = window.WebSocket;
+        if (OrigWebSocket) {
+          window.WebSocket = function(url, protocols) {
+            var urlStr = typeof url === 'string' ? url : (url && url.href ? url.href : '');
+            var isViteHmr =
+              urlStr.indexOf('@vite') !== -1 ||
+              urlStr.indexOf('/@vite/client') !== -1 ||
+              urlStr.indexOf('vite-hmr') !== -1 ||
+              (typeof protocols === 'string' && protocols.indexOf('vite-hmr') !== -1) ||
+              (Array.isArray(protocols) && protocols.indexOf('vite-hmr') !== -1);
+            if (isViteHmr) {
+              var dummy = {
+                readyState: 3,
+                bufferedAmount: 0,
+                protocol: 'vite-hmr',
+                url: urlStr,
+                send: function() {},
+                close: function() {},
+                addEventListener: function() {},
+                removeEventListener: function() {},
+                dispatchEvent: function() { return false; },
+                onopen: null,
+                onmessage: null,
+                onerror: null,
+                onclose: null,
+              };
+              setTimeout(function() {
+                if (dummy.onclose) dummy.onclose({ wasClean: true, code: 1000, reason: 'HMR disabled in preview' });
+              }, 0);
+              return dummy;
+            }
+            return new OrigWebSocket(url, protocols);
+          };
+          window.WebSocket.prototype = OrigWebSocket.prototype;
+          window.WebSocket.CONNECTING = OrigWebSocket.CONNECTING;
+          window.WebSocket.OPEN = OrigWebSocket.OPEN;
+          window.WebSocket.CLOSING = OrigWebSocket.CLOSING;
+          window.WebSocket.CLOSED = OrigWebSocket.CLOSED;
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-[#0B1724] text-[#F4F8FB] antialiased selection:bg-[#20B8A8] selection:text-[#0B1724] overflow-x-hidden w-full max-w-full min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

@@ -1,0 +1,10 @@
+{
+  "name": "Welora Avatar AI",
+  "description": "Welora Avatar AI: Next Generation Healthcare Intelligence. Comprehensive AI healthcare companion with medical symptom checking, voice avatar assistant, prescription & lab OCR, emergency SOS, hospital locator, doctor appointments, personal health journal, and medical history.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
